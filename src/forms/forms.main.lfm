@@ -81,7 +81,7 @@ object frmMain: TfrmMain
       Width = 358
       AutoSize = True
       BorderSpacing.Around = 8
-      Caption = 'Original Code: '#10'*  Andrew Thomas Brunner (http://www.aurawin.com)'#10#10'Correcting Critical Section Lock:'#10' * paweld (https://github.com/paweld)'
+      Caption = 'Original Code:'#10'*  Andrew Thomas Brunner (http://www.aurawin.com)'#10#10'Correcting Critical Section Lock:'#10' * paweld (https://github.com/paweld)'
       TabOrder = 0
     end
   end
