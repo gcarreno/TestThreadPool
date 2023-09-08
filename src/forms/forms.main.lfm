@@ -1,0 +1,100 @@
+object frmMain: TfrmMain
+  Left = 388
+  Height = 397
+  Top = 250
+  Width = 654
+  Caption = 'frmMain'
+  ClientHeight = 397
+  ClientWidth = 654
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  object panActions: TPanel
+    Left = 0
+    Height = 40
+    Top = 0
+    Width = 654
+    Align = alTop
+    AutoSize = True
+    ClientHeight = 40
+    ClientWidth = 654
+    TabOrder = 0
+    object lblFileName: TLabel
+      Left = 5
+      Height = 34
+      Top = 5
+      Width = 24
+      Align = alLeft
+      BorderSpacing.Left = 4
+      BorderSpacing.Top = 4
+      Caption = 'File'
+      ParentColor = False
+    end
+    object edtFileName: TEdit
+      Left = 33
+      Height = 34
+      Top = 5
+      Width = 312
+      Align = alLeft
+      BorderSpacing.Left = 4
+      BorderSpacing.Top = 4
+      TabOrder = 0
+    end
+    object btnAddToQueue: TButton
+      Left = 349
+      Height = 34
+      Top = 5
+      Width = 108
+      Align = alLeft
+      AutoSize = True
+      BorderSpacing.Left = 4
+      BorderSpacing.Top = 4
+      Caption = 'Add to Queue'
+      OnClick = btnAddToQueueClick
+      TabOrder = 1
+    end
+  end
+  object memLog: TMemo
+    Left = 4
+    Height = 244
+    Top = 44
+    Width = 646
+    Align = alClient
+    BorderSpacing.Around = 4
+    ReadOnly = True
+    ScrollBars = ssAutoVertical
+    TabOrder = 1
+  end
+  object panCredits: TPanel
+    Left = 0
+    Height = 105
+    Top = 292
+    Width = 654
+    Align = alBottom
+    AutoSize = True
+    ClientHeight = 105
+    ClientWidth = 654
+    TabOrder = 2
+    object sttCredits: TStaticText
+      Left = 9
+      Height = 87
+      Top = 9
+      Width = 358
+      AutoSize = True
+      BorderSpacing.Around = 8
+      Caption = 'Original Code: '#10'*  Andrew Thomas Brunner (http://www.aurawin.com)'#10#10'Correcting Critical Section Lock:'#10' * paweld (https://github.com/paweld)'
+      TabOrder = 0
+    end
+  end
+  object EventLog1: TEventLog
+    AppendContent = False
+    LogType = ltSystem
+    Active = False
+    RaiseExceptionOnError = False
+    DefaultEventType = etCustom
+    CustomLogType = 0
+    EventIDOffset = 0
+    Paused = False
+    Left = 113
+    Top = 114
+  end
+end
