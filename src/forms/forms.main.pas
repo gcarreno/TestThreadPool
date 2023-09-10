@@ -64,9 +64,9 @@ end;
 
 procedure TfrmMain.FormDestroy(Sender: TObject);
 begin
-  evlMain.Debug(FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Freeing Manager'));
-  FreeAndNil(FManager);
-  //FManager:= nil;
+  //evlMain.Debug(FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Freeing Manager'));
+  //FreeAndNil(FManager);
+  FManager:= nil;
   evlMain.Active:= False;
   evlMain.Free;
 end;

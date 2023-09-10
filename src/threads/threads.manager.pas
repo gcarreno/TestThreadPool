@@ -45,7 +45,7 @@ type
     // This one is used to store items processed
     FCompleteList: TList;  // List of items completed.
     // This list is used to store Pointers to Thread Objects (Start/Stop/Pause/Resume
-    FThreadList: TInterfaceList;  // List of Threads created in system.
+    FThreadList: IInterfaceList;  // List of Threads created in system.
     // The string to convey status
     FStatusMessage: string;
     // Event to send status message
@@ -177,9 +177,9 @@ begin
   evlMain.Debug(sLogMessage);
   FreeAndNil(FCompleteList);
 
-  sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Freeing Thread List');
-  evlMain.Debug(sLogMessage);
-  FThreadList:= nil;
+  //sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Freeing Thread List');
+  //evlMain.Debug(sLogMessage);
+  //FThreadList:= nil;
 
   inherited Destroy;
 end;
@@ -237,7 +237,7 @@ begin
       );
       evlMain.Debug(sLogMessage);
       Log(sLogMessage);
-      //tdWorker:= nil;
+      tdWorker:= nil;
     until (Size = FThreadList.Count);
   end
   else if (Size < FThreadList.Count) then
@@ -268,8 +268,8 @@ begin
           FThreadList.Remove(tdWorker);
         end;
       finally
-        FreeAndNil(tdWorker);
-        //tdWorker:= nil;
+        //FreeAndNil(tdWorker);
+        tdWorker:= nil;
       end;
     until (FThreadList.Count <= Size);
   end;

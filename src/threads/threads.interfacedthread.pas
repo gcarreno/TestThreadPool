@@ -50,21 +50,29 @@ end;
 function TInterfacedThread._AddRef: longint;
   {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 begin
-  {sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, '_AddRef');
-  evlMain.Debug(sLogMessage);}
   Result:= interlockedincrement(FRefCount);
+  sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
+    Format('_AddRef %d', [ Result ])
+  );
+  evlMain.Debug(sLogMessage);
 end;
 
 function TInterfacedThread._Release: longint;
   {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 begin
-  {sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, '_Release');
-  evlMain.Debug(sLogMessage);}
   Result:=interlockeddecrement(FRefCount);
+  sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
+    Format('_Release %d', [ Result ])
+  );
+  evlMain.Debug(sLogMessage);
   if Result = 0 then
     begin
-    if interlockedincrement(FDestroyCount)=1 then
-      Self.destroy;
+      sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
+        Format('_Release Destroy %d', [ FDestroyCount ])
+      );
+      evlMain.Debug(sLogMessage);
+      if interlockedincrement(FDestroyCount)=1 then
+        Self.destroy;
     end;
 end;
 
