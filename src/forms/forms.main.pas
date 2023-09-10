@@ -1,7 +1,6 @@
 unit Forms.Main;
 
 {$mode objfpc}{$H+}
-
 interface
 
 uses
@@ -15,6 +14,7 @@ uses
 , StdCtrls
 , eventlog
 , Logger.Common
+, Threads.Interfaces
 , Threads.Manager
 ;
 
@@ -25,7 +25,6 @@ type
   TfrmMain = class(TForm)
     btnAddToQueue: TButton;
     edtFileName: TEdit;
-    EventLog1: TEventLog;
     lblFileName: TLabel;
     memLog: TMemo;
     panActions: TPanel;
@@ -35,7 +34,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    FManager                      : TManagerThread;
+    FManager : IManagerThread;
     procedure ShowMessage(const AStatusMessage: String);
   public
 
@@ -53,6 +52,7 @@ implementation
 procedure TfrmMain.FormCreate(Sender: TObject);
 begin
   evlMain:= TEventLog.Create(Self);
+  evlMain.AppendContent:= False;
   evlMain.Identification:= Application.Title;
   evlMain.DefaultEventType:= etInfo;
   evlMain.FileName:= ChangeFileExt(ParamStr(0), '.log');
@@ -66,6 +66,7 @@ procedure TfrmMain.FormDestroy(Sender: TObject);
 begin
   evlMain.Debug(FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Freeing Manager'));
   FreeAndNil(FManager);
+  //FManager:= nil;
   evlMain.Active:= False;
   evlMain.Free;
 end;

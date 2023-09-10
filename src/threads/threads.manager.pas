@@ -23,14 +23,15 @@ uses
 , LazUtils
 , Logger.Common
 , Threads.Common
+, Threads.Interfaces
+, Threads.InterfacedThread
 , Threads.Worker
 ;
 
 type
-  TOnShowStatus = procedure(const AStatusMessage: string) of object;
 
   { TManagerThread }
-  TManagerThread = class(TThread)
+  TManagerThread = class(TInterfacedThread, IManagerThread)
   private
     FSleepP: PEventState;
     FLock: TRTLCriticalSection;
@@ -44,11 +45,16 @@ type
     // This one is used to store items processed
     FCompleteList: TList;  // List of items completed.
     // This list is used to store Pointers to Thread Objects (Start/Stop/Pause/Resume
-    FThreadList: TList;  // List of Threads created in system.
+    FThreadList: TInterfaceList;  // List of Threads created in system.
     // The string to convey status
     FStatusMessage: string;
     // Event to send status message
     FOnShowStatus: TOnShowStatus;
+
+    function GetOnShowStatus: TOnShowStatus;
+    procedure SetOnShowStatus(const AValue: TOnShowStatus);
+
+    function GetSleepP: PEventState;
   private
     FStatus: TManagerStatus;
   private
@@ -60,8 +66,10 @@ type
   protected
     procedure ProcessAddList;
   public
-    constructor Create(aNumberOfWorkerThreads: byte; const aOnShowStatus: TOnShowStatus);
-      reintroduce;
+    constructor Create(
+      aNumberOfWorkerThreads: byte;
+      const aOnShowStatus: TOnShowStatus
+    ); reintroduce;
     destructor Destroy; override;
   public
     function GetNextItem(var DataP: PThreadData): boolean;
@@ -69,16 +77,21 @@ type
     procedure AddFile(sFileName: string);
   public
     procedure Log(const AMessage: string);
+
     // Essential Operations that the Main Application can Perform.
     procedure Start;
     procedure Stop;
     procedure Pause;
     procedure Resume;
+
   public
-    property OnShowStatus: TOnShowStatus read FOnShowStatus write FOnShowStatus;
+    property OnShowStatus: TOnShowStatus
+      read GetOnShowStatus
+      write SetOnShowStatus;
     property SleepP: PEventState
-      read FSleepP;
+      read GetSleepP;
   end;
+  TManagerThreadClass = class of TManagerThread;
 
 implementation
 
@@ -93,8 +106,10 @@ end;
 
 { TManagerThread }
 
-constructor TManagerThread.Create(aNumberOfWorkerThreads: byte;
-  const aOnShowStatus: TOnShowStatus);
+constructor TManagerThread.Create(
+  aNumberOfWorkerThreads: byte;
+  const aOnShowStatus: TOnShowStatus
+);
 begin
   FOnShowStatus := aOnShowStatus;
 
@@ -109,13 +124,13 @@ begin
   FProcessingList := TList.Create;
   FCompleteList := TList.Create;
 
-  FThreadList := TList.Create;
+  FThreadList := TInterfaceList.Create;
 
   inherited Create(False);
 
   SetSize(aNumberOfWorkerThreads);
 
-  sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Manager Creeted');
+  sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Manager Created');
   evlMain.Debug(sLogMessage);
   Log(sLogMessage);
 end;
@@ -164,9 +179,26 @@ begin
 
   sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Freeing Thread List');
   evlMain.Debug(sLogMessage);
-  FreeAndNil(FThreadList);
+  FThreadList:= nil;
 
   inherited Destroy;
+end;
+
+function TManagerThread.GetOnShowStatus: TOnShowStatus;
+begin
+  Result:= FOnShowStatus;
+end;
+
+procedure TManagerThread.SetOnShowStatus(const AValue: TOnShowStatus);
+begin
+  if AValue = FOnShowStatus then
+    exit;
+  FOnShowStatus:= AValue;
+end;
+
+function TManagerThread.GetSleepP: PEventState;
+begin
+  Result:= FSleepP;
 end;
 
 procedure TManagerThread.Clear;
@@ -187,7 +219,7 @@ end;
 
 procedure TManagerThread.SetSize(Size: byte);
 var
-  tdWorker: TWorkerThread;
+  tdWorker: IWorkerThread;
 begin
   sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
     Format('Setting size from %d to %d', [FThreadList.Count, Size])
@@ -201,47 +233,44 @@ begin
       tdWorker := TWorkerThread.Create(Self);
       tdWorker.Id := FThreadList.Add(tdWorker);
       sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
-        Format('Added worker: %d', [tdWorker.Id])
+        Format('Add worker: %d', [tdWorker.Id])
       );
       evlMain.Debug(sLogMessage);
       Log(sLogMessage);
+      //tdWorker:= nil;
     until (Size = FThreadList.Count);
   end
   else if (Size < FThreadList.Count) then
   begin
     // Shrink List
     repeat
-      tdWorker := TWorkerThread(FThreadList.First);
-    try
-      sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
-        Format('Terminating worker: %d', [tdWorker.Id])
-      );
-      evlMain.Debug(sLogMessage);
-      Log(sLogMessage);
-      tdWorker.Terminate;
+      tdWorker := FThreadList.First as IWorkerThread;
       try
         sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
-          Format('Waiting for worker: %d', [tdWorker.Id])
+          Format('Terminating worker: %d', [tdWorker.Id])
         );
         evlMain.Debug(sLogMessage);
         Log(sLogMessage);
-        tdWorker.WaitFor;
+        tdWorker.Terminate;
+        try
+          sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
+            Format('Waiting for worker: %d', [tdWorker.Id])
+          );
+          evlMain.Debug(sLogMessage);
+          Log(sLogMessage);
+          tdWorker.WaitFor;
+        finally
+          sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
+            Format('Removing worker: %d', [tdWorker.Id])
+          );
+          evlMain.Debug(sLogMessage);
+          Log(sLogMessage);
+          FThreadList.Remove(tdWorker);
+        end;
       finally
-        sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
-          Format('Removing for worker: %d', [tdWorker.Id])
-        );
-        evlMain.Debug(sLogMessage);
-        Log(sLogMessage);
-        FThreadList.Remove(tdWorker);
+        FreeAndNil(tdWorker);
+        //tdWorker:= nil;
       end;
-    finally
-      sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
-        Format('Freeing worker: %d', [tdWorker.Id])
-      );
-      evlMain.Debug(sLogMessage);
-      Log(sLogMessage);
-      FreeAndNil(tdWorker);
-    end;
     until (FThreadList.Count <= Size);
   end;
 end;
@@ -340,7 +369,7 @@ end;
 
 procedure TManagerThread.Resume;
 begin
-  //inherited Start;
+  inherited Start;
 end;
 
 procedure TManagerThread.ProcessAddList;

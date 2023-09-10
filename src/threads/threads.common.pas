@@ -26,6 +26,7 @@ type
   TThreadStatus = (tsNone, tsRunning, tsIdle, tsStopped);
 
   PThreadData = ^TThreadData;
+  TOnShowStatus = procedure(const AStatusMessage: string) of object;
   TOnThreadComplete = procedure(DataP: PThreadData) of object;
 
   TThreadData = record

@@ -10,8 +10,11 @@ uses
 , eventlog
 ;
 
-function FormatLogMessage(AFileName: String; ALineNumber: Integer;
-  AMessage: String): String;
+function FormatLogMessage(
+  const AFileName: String;
+  const ALineNumber: Integer;
+  const AMessage: String
+): String;
 
 var
   evlMain: TEventLog;
@@ -19,11 +22,16 @@ var
 
 implementation
 
-function FormatLogMessage(AFileName: String; ALineNumber: Integer;
-  AMessage: String): String;
+function FormatLogMessage(
+  const AFileName: String;
+  const ALineNumber: Integer;
+  const AMessage: String
+): String;
 begin
   Result:= Format('[%s(%d)] %s', [ AFileName, ALineNumber, AMessage ]);
 end;
 
+finalization
+  SetLength(sLogMessage, 0);
 end.
 

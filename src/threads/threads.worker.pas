@@ -23,37 +23,43 @@ uses
 , LazUtils
 , Logger.Common
 , Threads.Common
+, Threads.Interfaces
+, Threads.InterfacedThread
 ;
 
 type
 
 { TWorkerThread }
-  TWorkerThread = class(TThread)
+  TWorkerThread = class(TInterfacedThread, IWorkerThread)
   private
     FId: integer;
-    FManager: TThread;
+    FManager: IManagerThread;
     FItemP: PThreadData;
     FStatus: TThreadStatus;
+
+    function GetId: Integer;
+    procedure SetId(const AValue: Integer);
   protected
     procedure Execute; override;
   protected
     procedure ProcessWorkerItem;
   public
-    constructor Create(aManager: TThread); reintroduce;
+    constructor Create(const aManager: IManagerThread); reintroduce;
     destructor Destroy; override;
   public
-    property Id: integer read FId write FId;
+
+    property Id: Integer
+      read GetId
+      write SetId;
+
   end;
+  TWorkerThreadClass = class of TWorkerThread;
 
 implementation
 
-uses
-  Threads.Manager // This avoids circular unit error
-;
-
 { TWorkerThread }
 
-constructor TWorkerThread.Create(aManager: TThread);
+constructor TWorkerThread.Create(const aManager: IManagerThread);
 begin
   FManager := aManager;
   FItemP := nil;
@@ -63,7 +69,7 @@ begin
   FreeOnTerminate := False;
   sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Worker Created');
   evlMain.Debug(sLogMessage);
-  TManagerThread(FManager).Log(sLogMessage);
+  FManager.Log(sLogMessage);
 end;
 
 destructor TWorkerThread.Destroy;
@@ -72,16 +78,29 @@ begin
   inherited Destroy;
 end;
 
+function TWorkerThread.GetId: Integer;
+begin
+  Result:= FId;
+end;
+
+
+procedure TWorkerThread.SetId(const AValue: Integer);
+begin
+  if AValue = FId then
+    exit;
+  FId:= AValue;
+end;
+
 procedure TWorkerThread.Execute;
 begin
   sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
     Format('[Worker %d] Starting worker thread', [FId])
   );
   evlMain.Debug(sLogMessage);
-  TManagerThread(FManager).Log(sLogMessage);
+  //FManager.Log(sLogMessage);
   while not Terminated do
   begin
-    if TManagerThread(FManager).GetNextItem(FItemP) then
+    if FManager.GetNextItem(FItemP) then
     begin
       FStatus := tsRunning;
       ProcessWorkerItem;
@@ -89,13 +108,13 @@ begin
     end
     else
       FStatus := tsIdle;
-    BasicEventWaitFor(WORKER_TIMESLICE, TManagerThread(FManager).SleepP);
+    BasicEventWaitFor(WORKER_TIMESLICE, FManager.SleepP);
   end;
   sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%},
     Format('[Worker %d] Exiting worker thread', [FId])
   );
   evlMain.Debug(sLogMessage);
-  TManagerThread(FManager).Log(sLogMessage);
+  //FManager.Log(sLogMessage);
 end;
 
 procedure TWorkerThread.ProcessWorkerItem;
@@ -110,7 +129,7 @@ begin
         [FId, FItemP^.Id, FItemP^.FileName])
     );
     evlMain.Debug(sLogMessage);
-    TManagerThread(FManager).Log(sLogMessage);
+    FManager.Log(sLogMessage);
     FS := TFileStream.Create(FItemP^.FileName, fmOpenRead or fmShareDenyWrite);
     try
       // The file is now loaded as a stream.
@@ -126,7 +145,7 @@ begin
       Format('File %s does not exist', [FItemP^.FileName])
     );
     evlMain.Debug(sLogMessage);
-    TManagerThread(FManager).Log(sLogMessage);
+    FManager.Log(sLogMessage);
   end;
 end;
 
