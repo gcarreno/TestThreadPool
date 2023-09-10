@@ -177,9 +177,9 @@ begin
   evlMain.Debug(sLogMessage);
   FreeAndNil(FCompleteList);
 
-  //sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Freeing Thread List');
-  //evlMain.Debug(sLogMessage);
-  //FThreadList:= nil;
+  sLogMessage:= FormatLogMessage({$I %FILE%}, {$I %LINENUM%}, 'Freeing Thread List');
+  evlMain.Debug(sLogMessage);
+  FThreadList:= nil;
 
   inherited Destroy;
 end;
